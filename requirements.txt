@@ -1,0 +1,3 @@
+pyaml
+web3
+py-solc-x
