@@ -1,0 +1,13 @@
+dev:
+  infura_url: <infura_url>
+  user_address: <user_address>
+  private_key: <private_key>
+  contract_address: <contract_address>
+  token_uri: <token_uri>
+
+prod:
+  infura_url: <infura_url>
+  user_address: <user_address>
+  private_key: <private_key>
+  contract_address: <contract_address>
+  token_uri: <token_uri>
