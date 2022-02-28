@@ -107,7 +107,7 @@ if __name__ == '__main__':
     print(f"BlockChain conection is = {w3.isConnected()}") 
 
     # build contract
-    compiled_sol = compile_source_file('solidity/MyNFT.sol', '0.8.10', 'node_modules')
+    compiled_sol = compile_source_file('solidity/MyNFT.sol', '0.8.11', 'node_modules')
     contract_id = next(iter(compiled_sol))
     contract_interface = compiled_sol[contract_id]
     
