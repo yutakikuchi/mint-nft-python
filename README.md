@@ -8,6 +8,9 @@ This repository is minting NFT using python. Dependency Libraries are openzeppel
 $ npm install --prefix=./ @openzeppelin/contracts
 $ pip install -r requirements.txt
 $ python mint_nft.py
+
+## if you want to use the full-on-chain version. Please do the below script.
+$ pyhon mint_nft_onchain.py test.svg
 ```
 
 ## Premise
