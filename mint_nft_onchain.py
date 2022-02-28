@@ -3,11 +3,21 @@ import os
 import pprint
 import inspect
 import yaml
+import base64
+from xml.dom import minidom
+import mimetypes
 
 from web3 import Web3, IPCProvider
 from web3.providers.rpc import HTTPProvider
 from web3.middleware import geth_poa_middleware
 from solcx import compile_source
+
+def parse_svg_file(file, encode=False):
+  if mimetypes.guess_type(file)[0] != 'image/svg+xml':
+    return False
+  doc = minidom.parse(file)
+  res = doc.toprettyxml() if encode == False else base64.b64encode(doc.toprettyxml().encode('utf-8'))
+  return res
 
 def get_checksum_address(w3, address):
   if(w3.isChecksumAddress(address) == False):
@@ -25,7 +35,6 @@ def compile_source_file(file_path, solc_version, base_path):
   return compiled_sol
 
 def deploy_contract(w3, contract_interface, private_key):
-  
   user_address = from_address = w3.eth.defaultAccount
   contract = get_contract(w3, contract_interface)
   base_txn = get_base_txn(w3, user_address, from_address) 
@@ -54,10 +63,11 @@ def get_nonce(w3, address):
   address = get_checksum_address(w3, address)
   return w3.eth.get_transaction_count(address)
 
-def get_sign_mint_txn(w3, contract, user_address, token_uri, private_key):  
+def get_sign_mint_txn(w3, contract, user_address, private_key, image_xml):  
   user_address = get_checksum_address(w3, user_address)
   base_txn = get_base_txn(w3, user_address)
-  mint_txn = contract.functions.mintNFT(user_address, token_uri).buildTransaction(base_txn)
+  mint_txn = contract.functions.mintNFT(image_xml, '... input name ...', '... input description ..').buildTransaction(base_txn)
+  pprint.pprint(mint_txn);
   sign_mint_txn = get_sign_txn(w3, mint_txn, private_key)
   return sign_mint_txn
 
@@ -91,11 +101,16 @@ if __name__ == '__main__':
     if os.environ.get('ENV') is None:
       env = 'dev'
     
+    # read svg
+    file = sys.argv[1]
+    image_xml = parse_svg_file(file)
+    if image_xml == False:
+      raise Exception('Input file is not svg')
+
     # load config value
     user_address = config[env]['user_address']
     private_key = config[env]['private_key']
     contract_address = config[env]['contract_address']
-    token_uri = config[env]['token_uri']
     
     # w3 instance
     polygon_infura_url = config[env]['infura_url']
@@ -107,7 +122,7 @@ if __name__ == '__main__':
     print(f"BlockChain conection is = {w3.isConnected()}") 
 
     # build contract
-    compiled_sol = compile_source_file('solidity/MyNFT.sol', '0.8.11', 'node_modules')
+    compiled_sol = compile_source_file('solidity/MyNFT_OnChain.sol', '0.8.11', 'node_modules')
     contract_id = next(iter(compiled_sol))
     contract_interface = compiled_sol[contract_id]
     
@@ -120,7 +135,7 @@ if __name__ == '__main__':
     contract = get_contract(w3, contract_interface, contract_address)
     
     # build txn
-    sign_mint_txn = get_sign_mint_txn(w3, contract, user_address, token_uri, private_key)
+    sign_mint_txn = get_sign_mint_txn(w3, contract, user_address, private_key, image_xml)
     pprint.pprint(f"sign_mint_txn : {sign_mint_txn}")
     
     # send txn
@@ -128,7 +143,7 @@ if __name__ == '__main__':
     hex_tokenid = receipt["logs"][0]["topics"][3].hex()
     tokenid = int(hex_tokenid, 16) 
     print(f"Got contract tokenid: {tokenid}")
-
+    
   except Exception as e:
     tb = sys.exc_info()[2]
     print("message:{0}".format(e.with_traceback(tb)))
